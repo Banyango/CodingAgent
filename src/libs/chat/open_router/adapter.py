@@ -6,15 +6,15 @@ from pydantic.json_schema import JsonSchemaValue
 from wireup import service
 
 from core.chat.models import FunctionCallToolModel
-from libs.chat.ollama.config import OllamaAISettings
+from libs.chat.model_adapter import ModelAdapter
+from libs.chat.open_router.config import OpenRouterSettings
 from libs.chat.types import ChatResponse, Message
 from dataclasses import asdict, is_dataclass
-from ollama import Message as OllamaMessage, Tool as OllamaTool
 
 
-@service(qualifier="ollama")
-class OllamaClient:
-    def __init__(self, config: OllamaAISettings):
+@service(qualifier="openrouter")
+class OpenRouterAdapter(ModelAdapter):
+    def __init__(self, config: OpenRouterSettings):
         self.client = ollama.AsyncClient(config.base_url)
         self.model = config.model
 
