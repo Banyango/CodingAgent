@@ -1,9 +1,18 @@
-from typing import List, Dict, Type, Optional
+from typing import (
+    List,
+    Dict,
+    Type,
+    Optional,
+    get_origin,
+    get_args,
+    Union as TypingUnion,
+)
+import types
 import inspect
 
 from core.agent.interfaces import Tool
 from core.chat.models import (
-    FunctionCallToolModel,
+    FunctionCallReqeustModel,
     FunctionModel,
     ParametersModel,
     PropertyModel,
@@ -32,18 +41,35 @@ def get_json_type_from_python_type(kind: str) -> str:
         return "array"
     elif kind is dict:
         return "object"
+    elif kind is types.NoneType:
+        return "null"
     else:
-        return "string"
+        raise ValueError(f"Unsupported parameter type: {kind}")
 
 
-def serialize_tool(tool: Type[Tool]) -> FunctionCallToolModel:
+def get_union_types(tp) -> tuple:
+    """
+    Return a tuple of member types for a Union (including PEP 604 `A | B`).
+    Returns an empty tuple if `tp` is not a union.
+    """
+    origin = get_origin(tp)
+    if (
+        origin is TypingUnion
+        or origin is types.UnionType
+        or isinstance(tp, types.UnionType)
+    ):
+        return get_args(tp)
+    return ()
+
+
+def serialize_tool(tool: Type[Tool]) -> FunctionCallReqeustModel:
     """Serialize a Tool into a FunctionCallToolModel.
 
     Args:
         tool (Tool): The tool to serialize.
 
     Returns:
-        FunctionCallToolModel: The serialized tool.
+        FunctionCallReqeustModel: The serialized tool.
     """
     signature = inspect.signature(tool.execute_async)
 
@@ -59,12 +85,19 @@ def serialize_tool(tool: Type[Tool]) -> FunctionCallToolModel:
         if parameter.default == inspect.Parameter.empty:
             required.append(name)
 
+        types_or_type: str | List[str] = []
+        if isinstance(kind, types.UnionType):
+            members = get_union_types(kind)
+            types_or_type = [get_json_type_from_python_type(m) for m in members]
+        else:
+            types_or_type = get_json_type_from_python_type(kind)
+
         params[name] = PropertyModel(
-            type=get_json_type_from_python_type(kind),
+            type=types_or_type,
             description=f"The {name} parameter",
         )
 
-    return FunctionCallToolModel(
+    return FunctionCallReqeustModel(
         type="function",
         function=FunctionModel(
             name=tool.__name__,
@@ -81,15 +114,15 @@ class ToolsProvider:
         self._str_to_tool_map: Dict[str, Type[Tool]] = {
             tool.__name__: tool for tool in tools
         }
-        self._serialized_tools: List[FunctionCallToolModel] = [
+        self._serialized_tools: List[FunctionCallReqeustModel] = [
             serialize_tool(tool) for tool in tools
         ]
 
-    def get_tools(self) -> List[FunctionCallToolModel]:
+    def get_tools(self) -> List[FunctionCallReqeustModel]:
         """Get the serialized tools.
 
         Returns:
-            List[FunctionCallToolModel]: The list of serialized tools.
+            List[FunctionCallReqeustModel]: The list of serialized tools.
         """
         return self._serialized_tools
 

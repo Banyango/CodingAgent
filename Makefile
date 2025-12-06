@@ -1,7 +1,10 @@
 # Makefile to run ruff and pyright (prefers uv if available)
 RUN := export PYTHONPATH=src && uv run
 
-.PHONY: lint typecheck check install-dev
+# Default pytest args (can be overridden when calling make, e.g. `make pytest PYTEST_ARGS="-k test_name"`)
+PYTEST_ARGS ?= tests/unit
+
+.PHONY: lint typecheck check install-dev pytest test
 
 format:
 	$(RUN) ruff format
@@ -27,3 +30,11 @@ apply-migrations:
 
 down-migrations:
 	$(RUN) alembic downgrade -1
+
+# Run the test suite using pytest. You can pass extra args via PYTEST_ARGS, e.g.:
+#   make pytest PYTEST_ARGS="-k test_name -q"
+pytest:
+	$(RUN) pytest $(PYTEST_ARGS)
+
+# Alias
+test: pytest

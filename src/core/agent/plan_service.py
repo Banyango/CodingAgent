@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 from pydantic import BaseModel
 from wireup import service
 
-from core.chat.client import ChatClient
+from core.interfaces.chat import ChatClient
 from core.chat.models import ChatMessageModel, ChatOptionsModel
 
 
@@ -15,12 +15,15 @@ class Step(BaseModel):
 class Plan(BaseModel):
     steps: List[Step]
 
+
 @service
 class AgentPlanService:
     def __init__(self, chat_client: ChatClient):
         self.chat_client = chat_client
 
-    async def create_plan(self, message_input: str, system_prompt: str, context: Dict[str, Any]) -> Plan:
+    async def create_plan(
+        self, message_input: str, system_prompt: str, context: Dict[str, Any]
+    ) -> Plan:
         """
         Create a plan based on the given message_input.
 
@@ -41,9 +44,10 @@ class AgentPlanService:
                 ),
             ],
             tools=None,
-            options=ChatOptionsModel(
-                temperature=0.7, format=Plan.model_json_schema()
-            ),
+            options=ChatOptionsModel(temperature=0.7, format=Plan.model_json_schema()),
         )
 
-        return Plan.model_validate_json(response.message.content) or ""
+        if response.content:
+            return Plan.model_validate_json(response.content)
+
+        return Plan(steps=[])

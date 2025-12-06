@@ -3,10 +3,10 @@ from typing import Any, Dict
 from wireup import AsyncContainer
 
 from core.agent.agent import Agent
-from core.agent.interfaces import AgentMemoryService
+from core.interfaces.memory import AgentMemoryService
 from core.agent.providers import ToolsProvider
 
-from core.chat.client import ChatClient
+from core.interfaces.chat import ChatClient
 
 from core.code.tools.add_file import AddFile
 from core.code.tools.list_dir import ListDir

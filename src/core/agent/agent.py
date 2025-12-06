@@ -1,25 +1,25 @@
 import inspect
-from string import Template
 from typing import Dict, Any, List
 
 from loguru import logger
 from wireup import AsyncContainer
 
-from core.agent.interfaces import AgentMemoryService
+from core.code.models import ToolErrorModel
+from core.interfaces.memory import AgentMemoryService
 from core.agent.providers import ToolsProvider
-from core.chat.client import ChatClient
+from core.interfaces.chat import ChatClient
 from core.chat.models import ChatMessageModel, ChatOptionsModel
 
 
 class Agent:
     def __init__(
-            self,
-            chat_client: ChatClient,
-            container: AsyncContainer,
-            memory: AgentMemoryService,
-            tools: ToolsProvider,
-            system_prompt: str,
-            max_iterations: int = 15,
+        self,
+        chat_client: ChatClient,
+        container: AsyncContainer,
+        memory: AgentMemoryService,
+        tools: ToolsProvider,
+        system_prompt: str,
+        max_iterations: int = 15,
     ):
         self.chat_client = chat_client
         self.container = container
@@ -59,10 +59,10 @@ class Agent:
             if response is None:
                 break
 
-            if response.message.tool_calls is not None:
-                for tool_call in response.message.tool_calls:
-                    function_name = tool_call.function.name
-                    function_args = tool_call.function.arguments
+            if response.tool_calls is not None:
+                for tool_call in response.tool_calls:
+                    function_name = tool_call.name
+                    function_args = tool_call.arguments
 
                     klass_name = self.tools.get_tool_by_name(function_name)
                     if klass_name is None:
@@ -108,24 +108,34 @@ class Agent:
                     if tool_response is None:
                         tool_response = ""
 
-                    logger.info("Tool {function_name} executed with response: {tool_response}", function_name=function_name, tool_response=tool_response)
+                    logger.info(
+                        "Tool {function_name} executed with response: {tool_response}",
+                        function_name=function_name,
+                        tool_response=tool_response,
+                    )
 
                     messages.append(
                         ChatMessageModel(
                             role="tool",
                             tool_call_id=tool_call.id,
-                            thinking=response.message.thinking,
-                            content=tool_response or "",
+                            thinking=response.thinking,
+                            content=tool_response.error_message
+                            if isinstance(tool_response, ToolErrorModel)
+                            else tool_response,
                             tool_name=function_name,
                         )
                     )
             else:
-                logger.info("Assistant responded: {content}", content=response.message.content)
-                messages.append(ChatMessageModel(
-                    role="assistant",
-                    content=response.message.content or "",
-                    thinking=response.message.thinking
-                ))
+                logger.info(
+                    "Assistant responded: {content}", content=response.content
+                )
+                messages.append(
+                    ChatMessageModel(
+                        role="assistant",
+                        content=response.content or "",
+                        thinking=response.thinking,
+                    )
+                )
 
             is_done = await self.check_if_request_is_done(messages)
             if is_done:
@@ -138,7 +148,7 @@ class Agent:
     async def check_if_request_is_done(self, messages: List[ChatMessageModel]) -> bool:
         is_done_system_prompt = (
             "$messages\n"
-            "Based on the previous conversation, has the user's request been fully addressed? Respond with 'yes' or 'no'." 
+            "Based on the previous conversation, has the user's request been fully addressed? Respond with 'yes' or 'no'."
             "\n".join([f"{m.content}" for m in messages])
         )
 
@@ -155,8 +165,8 @@ class Agent:
             tools=None,
         )
 
-        if response is not None and response.message.content is not None:
-            content = response.message.content.strip().lower()
+        if response is not None and response.content is not None:
+            content = response.content.strip().lower()
             return content == "yes"
 
         return False
@@ -172,20 +182,20 @@ class Agent:
             str: The final response content.
         """
         response = await self.chat_client.chat(
-            messages=messages + [
+            messages=messages
+            + [
                 ChatMessageModel(
                     role="system",
                     content="Generate a concise final response to the user's original request based on the conversation so far.",
                 )
             ],
             options=ChatOptionsModel(
-                model="gpt-os:20b",
                 temperature=0.7,
             ),
             tools=None,
         )
 
-        if response is not None and response.message.content is not None:
-            return response.message.content.strip()
+        if response is not None and response.content is not None:
+            return response.content.strip()
 
         return "No final response generated."

@@ -1,5 +1,6 @@
 from core.agent.providers import ToolsProvider
 from core.agent.interfaces import Tool
+from core.code.models import ToolErrorModel
 
 
 class FakeTool(Tool):
@@ -10,11 +11,11 @@ class FakeTool(Tool):
         count: int,
         name: str = "bob",
         active: bool = True,
-        data: dict = None,
-        items: list = None,
-    ):
+        data: dict | None = None,
+        items: list | None = None,
+    ) -> str | ToolErrorModel:
         """A simple async method used to test signature serialization."""
-        return None
+        return ""
 
 
 def test_get_tools_should_return_serialized_tool():
@@ -38,8 +39,8 @@ def test_get_tools_should_return_serialized_tool():
     assert tools[0].function.parameters.properties["count"].type == "integer"
     assert tools[0].function.parameters.properties["name"].type == "string"
     assert tools[0].function.parameters.properties["active"].type == "boolean"
-    assert tools[0].function.parameters.properties["data"].type == "object"
-    assert tools[0].function.parameters.properties["items"].type == "array"
+    assert tools[0].function.parameters.properties["data"].type == ["object", "null"]
+    assert tools[0].function.parameters.properties["items"].type == ["array", "null"]
 
 
 def test_get_tool_by_name_should_return_tool_when_name_is_valid():
@@ -53,13 +54,12 @@ def test_get_tool_by_name_should_return_tool_when_name_is_valid():
     assert tools == FakeTool
 
 
-def test_get_tool_by_name_should_raise_key_error_when_name_is_invalid():
+def test_get_tool_by_name_should_return_none_when_name_is_invalid():
     # Arrange
     tool_cache = ToolsProvider([FakeTool])
 
-    # Act / Assert
-    try:
-        tool_cache.get_tool_by_name("NonExistentTool")
-        assert False, "Expected KeyError was not raised"
-    except KeyError:
-        pass
+    # Act
+    result = tool_cache.get_tool_by_name("NonExistentTool")
+
+    # Assert
+    assert result is None

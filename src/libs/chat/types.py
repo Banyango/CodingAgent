@@ -22,6 +22,7 @@ class ToolCall:
     """
     Model tool calls.
     """
+
     id: Optional[str] = None
 
     function: Function

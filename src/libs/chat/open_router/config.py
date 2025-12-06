@@ -11,8 +11,6 @@ class OpenRouterSettings(BaseSettings):
     model: str = "gpt-oss:20b"
 
 
-
-
 @service
 def get_open_router_settings() -> OpenRouterSettings:
     settings = OpenRouterSettings()

@@ -4,15 +4,16 @@ import tempfile
 
 import pytest
 
+from core.code.models import ToolErrorModel, CodeContext
 from core.code.tools.list_dir import ListDir
 
 
 @pytest.mark.asyncio
 async def test_execute_lists_directory_entries_when_input_is_valid():
     # Arrange
-    mock_fs = MagicMock()
-    mock_fs.is_path_within_dir.return_value = True
-    tool = ListDir(file_service=mock_fs)
+    file_service_mock = MagicMock()
+    file_service_mock.validate_file_path.return_value = None
+    tool = ListDir(file_service=file_service_mock)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
@@ -23,30 +24,29 @@ async def test_execute_lists_directory_entries_when_input_is_valid():
         for f in files:
             f.write_text("content")
 
-        file_path = tmpdir
-        file_name = "subdir"
-        context = {"project_root": tmpdir}
+        file_path = tmpdir + "/subdir"
+        context = CodeContext(project_root=tmpdir)
 
         # Act
-        result = await tool.execute_async(file_path, file_name, context)
+        result = await tool.execute_async(file_path, context)
 
         # Assert
-        returned = {line for line in result.splitlines() if line}
-        expected = {f.name for f in files}
-        assert returned == expected
+        assert f"\nListDir at {sub.as_posix()}:\nc.md, b.txt, a.txt\n" == result
 
 
 @pytest.mark.asyncio
 async def test_execute_returns_error_when_path_outside_project_root():
     # Arrange
-    mock_fs = MagicMock()
-    mock_fs.is_path_within_dir.return_value = False
-    tool = ListDir(file_service=mock_fs)
+    file_service_mock = MagicMock()
+    error_model = ToolErrorModel(
+        tool_name="ModifyFile", error_message="Path is outside of project root"
+    )
+    file_service_mock.validate_file_path.return_value = error_model
+
+    tool = ListDir(file_service=file_service_mock)
 
     # Act
-    result = await tool.execute_async(
-        "/irrelevant", "subdir", {"project_root": "/project"}
-    )
+    result = await tool.execute_async("/irrelevant", {"project_root": "/project"})
 
     # Assert
-    assert "outside of project root" in result
+    assert result == error_model

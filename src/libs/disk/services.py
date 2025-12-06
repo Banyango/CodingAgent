@@ -4,13 +4,13 @@ from typing import List
 import aiofiles
 from wireup import service
 
-from core.agent.interfaces import AgentMemoryService
+from core.interfaces.memory import AgentMemoryService
 from core.chat.models import ChatMessageModel
 
 
 @service
 class DebuggingAgentMemoryService(AgentMemoryService):
-    async def load_messages(self) -> List[ChatMessageModel] | None:
+    async def load_messages(self) -> List[ChatMessageModel]:
         try:
             async with aiofiles.open("agent_memory.json", "r", encoding="utf-8") as f:
                 content = await f.read()
@@ -21,7 +21,7 @@ class DebuggingAgentMemoryService(AgentMemoryService):
                 ]
                 return messages
         except FileNotFoundError:
-            return None
+            return []
 
     async def save_messages(self, messages: List[ChatMessageModel]):
         memory = {"messages": [message.__dict__ for message in messages]}

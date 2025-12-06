@@ -5,8 +5,9 @@ import wireup
 
 import core
 import libs
-from core.agent.interfaces import AgentMemoryService
-from core.chat.client import ChatClient
+
+from core.interfaces.memory import AgentMemoryService
+from core.interfaces.chat import ChatClient
 from core.agent.operations.create_response_operation import CreateAgentResponseOperation
 
 

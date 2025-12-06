@@ -1,6 +1,5 @@
 import asyncio
 from pathlib import Path
-from typing import Dict, Any
 
 from loguru import logger
 from wireup import service
@@ -9,6 +8,7 @@ from core.agent.interfaces import Tool
 import os
 import tempfile
 
+from core.code.models import CodeContext, ToolErrorModel
 from core.code.services import FileService
 
 
@@ -42,19 +42,30 @@ class ModifyFile(Tool):
                     pass
 
     async def execute_async(
-        self, file_path: str, new_content: str, context: Dict[str, Any]
-    ) -> str:
+        self, file_path: str, new_content: str, context: CodeContext
+    ) -> str | ToolErrorModel:
         """Atomically replace the contents of `file_path` with `new_content`.
 
         Args:
             file_path (str): The full path to the file to be modified.
             new_content (str): The new content to write to the file.
-            context (Dict[str, Any]): Additional context for the operation.
+            context (CodeContext): Additional context for the operation.
         """
+        error = self.file_service.validate_file_path(
+            tool_name="ModifyFile",
+            file_path=file_path,
+            project_root=context["project_root"],
+        )
+        if error:
+            return error
+
         path = Path(context["project_root"]) / Path(file_path)
+
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
+
             await asyncio.to_thread(self._write_atomic, path, new_content)
+
             return f"ModifyFile - file_path = {file_path} updated to {new_content}"
         except Exception as exc:
             logger.error(f"Failed to modify file {file_path}: {exc}")

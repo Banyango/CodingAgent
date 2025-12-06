@@ -4,40 +4,62 @@ from pathlib import Path
 from core.code.services import FileService
 
 
-def test_is_path_within_dir_returns_true_for_directory_inside_base():
+def test_validate_file_path_should_return_error_when_path_outside_project_root():
+    # Arrange
+    tool = FileService()
+
+    # Act
+    result = tool.validate_file_path("test", "../path/to/file.txt", "/project")
+
+    # Assert
+    assert result is not None
+    assert (
+        "Access to paths outside the project root is not allowed."
+        in result.error_message
+    )
+    assert result.tool_name == "test"
+
+
+def test_validate_file_path_should_respond_with_error_when_file_does_not_exist():
+    # Arrange
+    tool = FileService()
+
+    # Act
+    result = tool.validate_file_path("test", "file.txt", "/project")
+
+    # Assert
+    assert result is not None
+    assert "The file file.txt does not exist." in result.error_message
+
+
+def test_validate_file_path_should_respond_with_error_when_path_exists_but_is_not_file():
+    # Arrange
+    tool = FileService()
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        sub = base / "sub"
-        sub.mkdir()
+        dir_name = "mydir"
+        (base / dir_name).mkdir()
 
-        assert FileService.is_path_within_dir(str(base), str(sub)) is True
+        # Act
+        result = tool.validate_file_path("test", "mydir", tmpdir)
 
-
-def test_is_path_within_dir_treat_target_as_file_with_nonexistent_file_inside_base():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        base = Path(tmpdir)
-        # target includes a filename that does not (yet) exist
-        target_file = base / "some" / "new.txt"
-
-        assert (
-            FileService.is_path_within_dir(
-                str(base), str(target_file), treat_target_as_file=True
-            )
-            is True
-        )
+        # Assert
+        assert result is not None
+        assert "The path mydir is not a file." in result.error_message
 
 
-def test_is_path_within_dir_returns_false_for_outside_path():
-    with tempfile.TemporaryDirectory() as base_tmp:
-        base = Path(base_tmp)
-        with tempfile.TemporaryDirectory() as other_tmp:
-            other = Path(other_tmp)
-            # other temporary directory is not inside base
-            assert FileService.is_path_within_dir(str(base), str(other)) is False
+def test_validate_file_path_should_respond_with_error_when_path_is_absolute():
+    # Arrange
+    tool = FileService()
 
+    # Act
+    result = tool.validate_file_path(
+        "test",
+        "/absolute/path/to/file.txt",
+        "/some/project",
+    )
 
-def test_is_path_within_dir_same_path_returns_true():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        base = Path(tmpdir)
-        # same path should be considered within
-        assert FileService.is_path_within_dir(str(base), str(base)) is True
+    # Assert
+    assert result is not None
+    assert "Absolute paths are not allowed." in result.error_message
+    assert result.tool_name == "test"

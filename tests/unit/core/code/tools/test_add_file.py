@@ -4,15 +4,16 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from core.code.models import ToolErrorModel
 from core.code.tools.add_file import AddFile
 
 
 @pytest.mark.asyncio
 async def test_execute_adds_file_when_input_is_valid():
     # Arrange
-    mock_fs = MagicMock()
-    mock_fs.is_path_within_dir.return_value = True
-    tool = AddFile(file_service=mock_fs)
+    file_service = MagicMock()
+    file_service.validate_file_path.return_value = None
+    tool = AddFile(file_service=file_service)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         file_path = tmpdir
@@ -31,9 +32,14 @@ async def test_execute_adds_file_when_input_is_valid():
 @pytest.mark.asyncio
 async def test_execute_returns_error_when_path_outside_project_root():
     # Arrange
-    mock_fs = MagicMock()
-    mock_fs.is_path_within_dir.return_value = False
-    tool = AddFile(file_service=mock_fs)
+    file_service = MagicMock()
+
+    error_model = ToolErrorModel(
+        tool_name="test", error_message="Path is outside of project root"
+    )
+    file_service.validate_file_path.return_value = error_model
+
+    tool = AddFile(file_service=file_service)
 
     # Act
     result = await tool.execute_async(
@@ -41,4 +47,6 @@ async def test_execute_returns_error_when_path_outside_project_root():
     )
 
     # Assert
-    assert "outside of project root" in result
+    assert isinstance(result, ToolErrorModel)
+    assert result == error_model
+    assert result.error_message == "Path is outside of project root"

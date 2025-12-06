@@ -5,11 +5,10 @@ from pydantic.json_schema import JsonSchemaValue
 
 from wireup import service
 
-from core.chat.models import FunctionCallToolModel
+from core.chat.models import FunctionCallReqeustModel, ChatMessageModel, FunctionCallResponseModel
 from libs.chat.ollama.config import OllamaAISettings
-from libs.chat.types import ChatResponse, Message
+from libs.chat.types import Message
 from dataclasses import asdict, is_dataclass
-from ollama import Message as OllamaMessage, Tool as OllamaTool
 
 
 @service
@@ -21,23 +20,34 @@ class OllamaAdapter:
     async def chat_create(
         self,
         messages: Sequence[Union[Mapping[str, Any], Message]],
-        tools: List[FunctionCallToolModel],
+        tools: List[FunctionCallReqeustModel],
         format: Optional[Union[Literal["", "json"], JsonSchemaValue]],
         think: Optional[bool] = None,
-    ) -> ChatResponse:
+    ) -> ChatMessageModel:
         """
         Create a chat completion
 
         Args:
             messages (Sequence[Union[Mapping[str, Any], Message]]): The messages to send to the chat model.
-            tools (List[FunctionCallToolModel]): The tools available for function calling.
+            tools (List[FunctionCallReqeustModel]): The tools available for function calling.
             format (Optional[Union[Literal['', 'json'], JsonSchemaValue]]): The format for the response.
             think (Optional[bool]): Whether to enable thinking mode.
         """
         if tools is None:
             tools = []
 
-        prepared_messages = [OllamaMessage(content=m.content, thinking=m.thinking, tool_name=m.tool_name, tool_calls=m.tool_calls, role=m.role).model_dump_json() if is_dataclass(m) else m for m in messages]
+        prepared_messages = [
+            {
+                "content": m.content,
+                "thinking": m.thinking,
+                "tool_name": m.tool_name,
+                "tool_calls": m.tool_calls or [],
+                "role": m.role,
+            }
+            if is_dataclass(m)
+            else m
+            for m in messages
+        ]
         prepared_tools = [asdict(t) if is_dataclass(t) else t for t in tools]
 
         response = await self.client.chat(
@@ -48,41 +58,16 @@ class OllamaAdapter:
             think=think,
         )
 
-        return ChatResponse(
-            message=Message(
-                role=response.message.role,
-                content=response.message.content,
-                thinking=response.message.thinking,
-                tool_name=response.message.tool_name,
-                tool_calls=response.message.tool_calls,
-            ),
-            done=response.done,
-        )
-
-    async def chat_with_streaming_response(
-        self,
-        messages: Sequence[Union[Mapping[str, Any], Message]],
-        tools: List[FunctionCallToolModel],
-        format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None,
-        think: Optional[bool] = None,
-    ):
-        """
-        Chat with streaming response
-
-        Args:
-            messages (Sequence[Union[Mapping[str, Any], Message]]): The messages to send to the chat model.
-            tools (List[FunctionCallToolModel]): The tools available for function calling.
-            format (Optional[Union[Literal['', 'json'], JsonSchemaValue]]): The format for the response.
-            think (Optional[bool]): Whether to enable thinking mode.
-        """
-        prepared_messages = [asdict(m) if is_dataclass(m) else m for m in messages]
-        prepared_tools = [asdict(t) if is_dataclass(t) else t for t in tools]
-
-        return self.client.chat(
-            stream=True,
-            model=self.model,
-            messages=prepared_messages,
-            tools=prepared_tools,
-            format=format,
-            think=think,
+        return ChatMessageModel(
+            role="assistant",
+            content=response.message.content or "",
+            thinking=response.message.thinking or "",
+            tool_name=response.message.tool_name or "",
+            tool_calls=[
+                FunctionCallResponseModel(
+                    name=tool_call.function.name,
+                    arguments=dict(tool_call.function.arguments),
+                )
+                for tool_call in (response.message.tool_calls or [])
+            ],
         )
