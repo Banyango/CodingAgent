@@ -1,5 +1,5 @@
 from core.agent.providers import ToolsProvider
-from core.agent.interfaces import Tool
+from core.interfaces.tool import Tool
 from core.code.models import ToolErrorModel
 
 

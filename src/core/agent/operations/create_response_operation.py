@@ -12,6 +12,7 @@ from core.code.tools.add_file import AddFile
 from core.code.tools.list_dir import ListDir
 from core.code.tools.modify_file import ModifyFile
 from core.code.tools.read_file import ReadFile
+from core.interfaces.plan import PlanRepository
 
 
 class CreateAgentResponseOperation:
@@ -20,10 +21,12 @@ class CreateAgentResponseOperation:
         client: ChatClient,
         container: AsyncContainer,
         memory_service: AgentMemoryService,
+        plan_repository: PlanRepository,
     ):
         self.client = client
         self.container = container
         self.memory_service = memory_service
+        self.plan_repository = plan_repository
 
     async def execute_async(self, message: str, context: Dict[str, Any]) -> str:
         """
@@ -33,7 +36,13 @@ class CreateAgentResponseOperation:
             message (str): The input message for the agent.
             context (Dict[str, Any]): Additional context for the agent that will be passed to all tools.
         """
-        system_prompt = """
+        plan = await self.plan_repository.search_plans(query=message)
+
+        plan_text = f"'{plan.name}':\n"
+        for step in plan.steps:
+            plan_text += f"- {step.description}\n"
+
+        system_prompt = f"""
         You are a helpful coding assistant. You have access to tools that can help you manage and manipulate code files within a project.
         Use the provided tools to assist with file operations as needed.
         
@@ -45,11 +54,7 @@ class CreateAgentResponseOperation:
         
         All paths are relative to the project root provided in the context. so strip leading slashes from paths.
         
-        Plan:
-        1. Understand the user's request.
-        2. Determine which tools to use based on the request.
-        3. Call the appropriate tools with the necessary arguments.
-        4. Return a summary of the actions taken or the requested information.
+        {plan_text}
         
         Evaluate the tool calls and stop when you have run enough tools to answer the user's question or complete the task.
         """

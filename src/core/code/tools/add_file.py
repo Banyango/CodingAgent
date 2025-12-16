@@ -5,7 +5,7 @@ import aiofiles
 from loguru import logger
 from wireup import service
 
-from core.agent.interfaces import Tool
+from core.interfaces.tool import Tool
 from core.code.models import ToolErrorModel, CodeContext
 from core.code.services import FileService
 

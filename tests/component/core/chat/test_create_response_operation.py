@@ -9,6 +9,7 @@ import libs
 from core.interfaces.memory import AgentMemoryService
 from core.interfaces.chat import ChatClient
 from core.agent.operations.create_response_operation import CreateAgentResponseOperation
+from core.interfaces.plan import PlanRepository
 
 
 @pytest.mark.asyncio
@@ -23,9 +24,14 @@ async def test_create_response_operation():
 
     chat_client = await headless_app.get(ChatClient)
     memory_service = await headless_app.get(AgentMemoryService)
+    plan_repository = await headless_app.get(PlanRepository)
+    await plan_repository.init_collection()
 
     _sut = CreateAgentResponseOperation(
-        client=chat_client, container=headless_app, memory_service=memory_service
+        client=chat_client,
+        container=headless_app,
+        memory_service=memory_service,
+        plan_repository=plan_repository,
     )
 
     # Act

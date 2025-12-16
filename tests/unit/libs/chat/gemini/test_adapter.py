@@ -152,7 +152,7 @@ async def test_chat_create_should_add_add_user_and_assistant_messages():
     assert len(contents) == 3
     assert contents[0].role == "user"
     assert contents[0].parts[0].text == "Hello, how are you?"
-    assert contents[1].role == "assistant"
+    assert contents[1].role == "model"
     assert contents[1].parts[0].text == "I'm doing great!"
     assert contents[2].role == "user"
     assert contents[2].parts[0].text == "Can you help me?"

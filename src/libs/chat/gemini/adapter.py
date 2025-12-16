@@ -10,7 +10,6 @@ from google.genai.types import (
     Tool,
     Schema,
     Type,
-    FunctionResponse, GenerationConfig,
 )
 from pydantic.json_schema import JsonSchemaValue
 
@@ -37,7 +36,7 @@ class GeminiClient:
 
 @service
 def gemini_client_factory(
-        config: GeminiAISettings,
+    config: GeminiAISettings,
 ) -> GeminiClient:
     return GeminiClient(config=config)
 
@@ -48,11 +47,11 @@ class GeminiAdapter(ModelAdapter):
         self.client = client
 
     async def chat_create(
-            self,
-            messages: List[ChatMessageModel],
-            tools: List[FunctionCallReqeustModel],
-            format: Optional[Union[Literal["", "json"], JsonSchemaValue]],
-            think: Optional[bool] = None,
+        self,
+        messages: List[ChatMessageModel],
+        tools: List[FunctionCallReqeustModel],
+        format: Optional[Union[Literal["", "json"], JsonSchemaValue]],
+        think: Optional[bool] = None,
     ) -> ChatMessageModel:
         """Create a chat completion
 
@@ -71,7 +70,8 @@ class GeminiAdapter(ModelAdapter):
                     parameters=Schema(
                         type=Type(tool.function.parameters.type),
                         properties={
-                            k: Schema(**v.model_dump()) for k, v in tool.function.parameters.properties.items()
+                            k: Schema(**v.model_dump())
+                            for k, v in tool.function.parameters.properties.items()
                         },
                         required=tool.function.parameters.required,
                     ),
@@ -85,19 +85,29 @@ class GeminiAdapter(ModelAdapter):
                 prepared_messages.append(
                     Content(
                         role="user",
-                        parts=[types.Part.from_function_response(
-                            name=message.tool_name,
-                            response={"result": message.content})
-                        ]
+                        parts=[
+                            types.Part.from_function_response(
+                                name=message.tool_name or "unknown_tool",
+                                response={"result": message.content},
+                            )
+                        ],
                     )
                 )
             elif message.role == "system":
-                system_instruction = Content(
-                    parts=[Part(text=message.content)]
-                )
+                system_instruction = Content(parts=[Part(text=message.content)])
             elif message.role == "assistant":
                 prepared_messages.append(
-                    Content(role="model", parts=[Part(text=message.content, thought_signature=message.thinking if isinstance(message.thinking, bytes) else None)])
+                    Content(
+                        role="model",
+                        parts=[
+                            Part(
+                                text=message.content,
+                                thought_signature=message.thinking
+                                if isinstance(message.thinking, bytes)
+                                else None,
+                            )
+                        ],
+                    )
                 )
             else:
                 prepared_messages.append(
@@ -105,31 +115,30 @@ class GeminiAdapter(ModelAdapter):
                 )
 
         if len(prepared_messages) == 0:
-            raise ValueError("At least one user message is required to generate a chat response.")
+            raise ValueError(
+                "At least one user message is required to generate a chat response."
+            )
 
         response: GenerateContentResponse = (
             await self.client.client.models.generate_content(
                 model=self.client.model,
                 contents=prepared_messages,
                 config=GenerateContentConfig(
-                    tools=[
-                        Tool(function_declarations=function_definitions)
-                    ],
-                    thinking_config=types.ThinkingConfig(
-                        include_thoughts=think
-                    ),
+                    tools=[Tool(function_declarations=function_definitions)],
+                    thinking_config=types.ThinkingConfig(include_thoughts=think),
                     system_instruction=system_instruction,
-                )
+                ),
             )
         )
 
         return ChatMessageModel(
             role="assistant",
             content=response.text or "",
-            thinking=response.parts[0].thought_signature,
+            thinking=response.parts[0].thought_signature if response.parts else None,
             tool_calls=[
                 FunctionCallResponseModel(
-                    name=function_call.name or "unknown_function", arguments=function_call.args or {}
+                    name=function_call.name or "unknown_function",
+                    arguments=function_call.args or {},
                 )
                 for function_call in response.function_calls or []
             ],

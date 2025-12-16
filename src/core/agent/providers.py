@@ -10,7 +10,7 @@ from typing import (
 import types
 import inspect
 
-from core.agent.interfaces import Tool
+from core.interfaces.tool import Tool
 from core.chat.models import (
     FunctionCallReqeustModel,
     FunctionModel,
