@@ -5,7 +5,11 @@ from pydantic.json_schema import JsonSchemaValue
 
 from wireup import service
 
-from core.chat.models import FunctionCallReqeustModel, ChatMessageModel, FunctionCallResponseModel
+from core.chat.models import (
+    FunctionCallReqeustModel,
+    ChatMessageModel,
+    FunctionCallResponseModel,
+)
 from libs.chat.ollama.config import OllamaAISettings
 from libs.chat.types import Message
 from dataclasses import asdict, is_dataclass

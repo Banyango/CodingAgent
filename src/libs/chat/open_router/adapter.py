@@ -11,7 +11,6 @@ from libs.chat.open_router.config import OpenRouterSettings
 from libs.chat.types import Message
 
 
-
 @service
 class OpenRouterAdapter:
     def __init__(self, config: OpenRouterSettings):

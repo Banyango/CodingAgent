@@ -7,7 +7,8 @@ from core.chat.models import (
     FunctionCallReqeustModel,
     FunctionModel,
     ParametersModel,
-    PropertyModel, ChatMessageModel,
+    PropertyModel,
+    ChatMessageModel,
 )
 from libs.chat.gemini.adapter import GeminiAdapter
 
@@ -50,7 +51,9 @@ async def test_gemini_adapter_chat_create_should_get_response_with_tools():
     # Call chat_create with a simple message and no tools
     response = await gemini.chat_create(
         messages=[
-            ChatMessageModel(role="user", content="what is the current weather in Calgary")
+            ChatMessageModel(
+                role="user", content="what is the current weather in Calgary"
+            )
         ],
         tools=[
             FunctionCallReqeustModel(

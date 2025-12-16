@@ -13,12 +13,12 @@ class PlanRepository(ABC):
         pass
 
     @abstractmethod
-    def search_plans(self, query: str) -> PlanModel:
+    async def search_plans(self, query: str) -> PlanModel:
         """Search for plans matching the given query.
 
         Args:
             query (str): The search query.
         Returns:
-            list[dict]: A list of plans matching the query.
+            PlanModel: The plan that matches the query.
         """
         pass

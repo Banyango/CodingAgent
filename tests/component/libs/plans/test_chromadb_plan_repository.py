@@ -51,7 +51,7 @@ async def test_search_plans_evaluate_results():
         "set up continuous integration and deployment (CI/CD) pipeline",
         "develop a mobile app with offline capabilities",
         "create a data visualization dashboard",
-        "Figure out whats wrong here"
+        "Figure out what's wrong here",
     ]
 
     for query in queries:
@@ -61,7 +61,3 @@ async def test_search_plans_evaluate_results():
     # output the responses for manual verification
     for query, response in zip(queries, responses):
         print(f"Query: {query}\nResponse: {response}\n")
-
-
-
-

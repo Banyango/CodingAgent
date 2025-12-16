@@ -98,6 +98,7 @@ class FunctionCallResponseModel(BaseModel):
     This is used to capture the name of the function called and the
     parsed arguments that should be passed to the tool implementation.
     """
+
     id: Optional[str] = None
     name: str
     arguments: Dict[str, Any]

@@ -21,7 +21,7 @@ class CreateAgentResponseOperation:
         client: ChatClient,
         container: AsyncContainer,
         memory_service: AgentMemoryService,
-        plan_repository: PlanRepository
+        plan_repository: PlanRepository,
     ):
         self.client = client
         self.container = container

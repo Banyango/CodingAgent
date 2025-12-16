@@ -127,9 +127,7 @@ class Agent:
                         )
                     )
             else:
-                logger.info(
-                    "Assistant responded: {content}", content=response.content
-                )
+                logger.info("Assistant responded: {content}", content=response.content)
                 messages.append(
                     ChatMessageModel(
                         role="assistant",
@@ -162,12 +160,9 @@ class Agent:
                     role="user",
                     content="Here is the conversation summary:\n"
                     + "\n".join(
-                        [
-                            f"{msg.role.capitalize()}: {msg.content}"
-                            for msg in messages
-                        ]
+                        [f"{msg.role.capitalize()}: {msg.content}" for msg in messages]
                     ),
-                )
+                ),
             ],
             options=ChatOptionsModel(
                 temperature=0.0,

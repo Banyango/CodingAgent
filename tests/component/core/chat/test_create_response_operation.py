@@ -31,7 +31,7 @@ async def test_create_response_operation():
         client=chat_client,
         container=headless_app,
         memory_service=memory_service,
-        plan_repository=plan_repository
+        plan_repository=plan_repository,
     )
 
     # Act
