@@ -53,3 +53,5 @@ build/
 dist/
 *.egg-info/
 
+# Chromadb data directory
+/chroma_db
