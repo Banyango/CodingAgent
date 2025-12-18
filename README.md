@@ -1,4 +1,4 @@
-# bottymcbotbot
+# Coding Agent
 
 A small assistant service that uses a local Ollama model/ Gemini API for chat and function-calling tools.
 
