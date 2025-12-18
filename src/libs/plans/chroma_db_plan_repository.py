@@ -3,6 +3,7 @@ from chromadb.api.models.Collection import Collection
 from chromadb.utils.embedding_functions.sentence_transformer_embedding_function import (
     SentenceTransformerEmbeddingFunction,
 )
+from loguru import logger
 from wireup import service
 
 from core.interfaces.plan import PlanRepository
@@ -35,7 +36,12 @@ class ChromaDbPlanRepository(PlanRepository):
         documents = []
         steps = []
         ids = []
+
+        total_plans = len(all_plans)
+        logger.info(f"Indexing {total_plans} plans into ChromaDB collection...")
+
         for i, plan in enumerate(all_plans):
+            logger.info(f"Indexing plan: {i}/{total_plans}")
             ids.append(f"id{i}")
             documents.append(plan.name)
             steps.append({"steps": "\n".join(step.description for step in plan.steps)})
@@ -43,7 +49,7 @@ class ChromaDbPlanRepository(PlanRepository):
         await asyncify(collection.upsert)(  # type: ignore
             documents=documents,
             metadatas=steps,
-            ids=ids,
+            ids=ids
         )
 
     async def search_plans(self, query: str) -> PlanModel:
