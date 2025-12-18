@@ -21,7 +21,7 @@ jobs:
         uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies (including test + dev extras)
-        run: uv sync --all-extras --dev
+        run: uv sync --group test --group dev
 
       - name: Run format
         run: make format
@@ -45,7 +45,7 @@ jobs:
         uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies (including test + dev extras)
-        run: uv sync --all-extras --dev
+        run: uv sync --group test --group dev
 
       - name: Run tests
         run: make test
