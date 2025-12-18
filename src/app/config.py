@@ -3,13 +3,11 @@ from wireup import service
 
 
 class APIConfig(BaseSettings):
-    app_port: int
-    app_host: str
-    api_version: str
-    log_level: str
-    path_prefix: str
-    secure_cookies: bool
-    jwt_secret_key: str
+    app_port: int = 8000
+    app_host: str = "localhost"
+    api_version: str = "1.0.0"
+    log_level: str = "INFO"
+    path_prefix: str = "/api"
 
 
 @service
