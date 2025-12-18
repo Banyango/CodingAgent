@@ -18,6 +18,4 @@ def chroma_config() -> ChromaConfig:
 class ChromaClient:
     def __init__(self, config: ChromaConfig):
         self.config = config
-        self.connection: ClientAPI = PersistentClient(
-            path=config.persist_directory
-        )
+        self.connection: ClientAPI = PersistentClient(path=config.persist_directory)

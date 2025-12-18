@@ -31,6 +31,7 @@ async def test_execute_lists_directory_entries_when_input_is_valid():
         result = await tool.execute_async(file_path, context)
 
         # Assert
+        assert isinstance(result, str)
         assert "ListDir at" in result
         assert "a.txt" in result
         assert "b.txt" in result
