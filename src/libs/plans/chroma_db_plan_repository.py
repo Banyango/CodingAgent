@@ -41,15 +41,13 @@ class ChromaDbPlanRepository(PlanRepository):
         logger.info(f"Indexing {total_plans} plans into ChromaDB collection...")
 
         for i, plan in enumerate(all_plans):
-            logger.info(f"Indexing plan: {i}/{total_plans}")
+            logger.info(f"Indexing plan: {i + 1}/{total_plans}")
             ids.append(f"id{i}")
             documents.append(plan.name)
             steps.append({"steps": "\n".join(step.description for step in plan.steps)})
 
         await asyncify(collection.upsert)(  # type: ignore
-            documents=documents,
-            metadatas=steps,
-            ids=ids
+            documents=documents, metadatas=steps, ids=ids
         )
 
     async def search_plans(self, query: str) -> PlanModel:

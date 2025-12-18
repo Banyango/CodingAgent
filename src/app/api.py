@@ -11,6 +11,7 @@ from wireup.integration import fastapi
 from libs.container import on_app_startup
 from src.app.container import container
 
+
 @contextlib.asynccontextmanager
 async def on_app_lifecycle(app: FastAPI):
     fastapi.setup(container, app)

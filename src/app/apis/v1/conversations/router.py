@@ -11,23 +11,21 @@ from core.interfaces.plan import PlanRepository
 router = APIRouter()
 
 
-@router.post("/conversations")
+@router.post("/conversations", tags=["conversations"])
 async def create_conversation(
-        request: ConversationRequest,
-        chat_client: Injected[ChatClient],
-        memory_service: Injected[AgentMemoryService],
-        plan_repository: Injected[PlanRepository],
+    request: ConversationRequest,
+    chat_client: Injected[ChatClient],
+    memory_service: Injected[AgentMemoryService],
+    plan_repository: Injected[PlanRepository],
 ):
-    await plan_repository.init_collection()
-
-    _sut = CreateAgentResponseOperation(
+    create_conversation_operation = CreateAgentResponseOperation(
         client=chat_client,
         container=container,
         memory_service=memory_service,
         plan_repository=plan_repository,
     )
 
-    response = await _sut.execute_async(
+    response = await create_conversation_operation.execute_async(
         request.message,
         context={"project_root": request.project_root},
     )
