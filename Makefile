@@ -19,7 +19,7 @@ install-dev:
 ifeq ($(UV),)
 	@echo "uv not found; please install ruff and pyright in your PATH or install uv."
 else
-	uv install --with dev
+	uv sync --group dev --group test
 endif
 
 create-migration:

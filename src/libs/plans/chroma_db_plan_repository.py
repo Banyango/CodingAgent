@@ -1,6 +1,8 @@
 from asyncer import asyncify
 from chromadb.api.models.Collection import Collection
-from chromadb.utils.embedding_functions.sentence_transformer_embedding_function import SentenceTransformerEmbeddingFunction
+from chromadb.utils.embedding_functions.sentence_transformer_embedding_function import (
+    SentenceTransformerEmbeddingFunction,
+)
 from wireup import service
 
 from core.interfaces.plan import PlanRepository
@@ -27,7 +29,7 @@ class ChromaDbPlanRepository(PlanRepository):
             get_or_create=True,
             embedding_function=SentenceTransformerEmbeddingFunction(
                 model_name="mixedbread-ai/mxbai-embed-xsmall-v1"
-            ), # type: ignore
+            ),  # type: ignore
         )
 
         documents = []
@@ -38,7 +40,7 @@ class ChromaDbPlanRepository(PlanRepository):
             documents.append(plan.name)
             steps.append({"steps": "\n".join(step.description for step in plan.steps)})
 
-        await asyncify(collection.upsert)( # type: ignore
+        await asyncify(collection.upsert)(  # type: ignore
             documents=documents,
             metadatas=steps,
             ids=ids,
@@ -70,6 +72,8 @@ class ChromaDbPlanRepository(PlanRepository):
         )
 
         return PlanModel(
-            name=model.documents[0][0] if model.documents and model.documents[0] else "",
+            name=model.documents[0][0]
+            if model.documents and model.documents[0]
+            else "",
             steps=[StepModel(description=step) for step in steps],
         )

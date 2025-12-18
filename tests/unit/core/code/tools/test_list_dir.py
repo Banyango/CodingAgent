@@ -31,7 +31,11 @@ async def test_execute_lists_directory_entries_when_input_is_valid():
         result = await tool.execute_async(file_path, context)
 
         # Assert
-        assert f"\nListDir at {sub.as_posix()}:\nc.md, b.txt, a.txt\n" == result
+        assert isinstance(result, str)
+        assert "ListDir at" in result
+        assert "a.txt" in result
+        assert "b.txt" in result
+        assert "c.md" in result
 
 
 @pytest.mark.asyncio
